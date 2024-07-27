@@ -16,11 +16,11 @@ const db = new sqlite3.Database('database.db'); // Use a file-based SQLite datab
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT,
-    amount INTEGER,
-    description TEXT,
-    date TEXT,
-    running_balance INTEGER
+    type TEXT  NOT NULL,
+    amount INTEGER  NOT NULL,
+    description TEXT  NOT NULL,
+    date TEXT  NOT NULL,
+    running_balance INTEGER  NOT NULL
   )`);
 });
 
