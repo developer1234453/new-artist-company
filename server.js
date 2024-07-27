@@ -4,17 +4,17 @@ const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Use PORT environment variable or default to 3000
 
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
 
 // Database setup
-const db = new sqlite3.Database('database.db');
+const db = new sqlite3.Database('database.db'); // Use a file-based SQLite database for persistence
 
 db.serialize(() => {
-  db.run(`CREATE TABLE transactions (
+  db.run(`CREATE TABLE IF NOT EXISTS transactions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     type TEXT,
     amount INTEGER,
@@ -28,7 +28,8 @@ db.serialize(() => {
 app.get('/api/transactions', (req, res) => {
   db.all('SELECT * FROM transactions ORDER BY date DESC', [], (err, rows) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.error('Database error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
       return;
     }
     res.json(rows);
@@ -38,9 +39,15 @@ app.get('/api/transactions', (req, res) => {
 app.post('/api/transactions', (req, res) => {
   const { type, amount, description, date } = req.body;
 
+  if (!type || !amount || !description || !date) {
+    res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+
   db.get('SELECT running_balance FROM transactions ORDER BY date DESC LIMIT 1', [], (err, row) => {
     if (err) {
-      res.status(500).json({ error: err.message });
+      console.error('Database error:', err.message);
+      res.status(500).json({ error: 'Internal server error' });
       return;
     }
 
@@ -52,7 +59,8 @@ app.post('/api/transactions', (req, res) => {
       [type, amount, description, date, running_balance],
       function (err) {
         if (err) {
-          res.status(500).json({ error: err.message });
+          console.error('Database error:', err.message);
+          res.status(500).json({ error: 'Internal server error' });
           return;
         }
         res.json({ id: this.lastID });
